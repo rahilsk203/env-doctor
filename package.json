@@ -1,0 +1,59 @@
+{
+  "name": "env-doctor",
+  "version": "1.0.0",
+  "description": "Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments",
+  "main": "dist/cli.js",
+  "bin": {
+    "env-doctor": "./dist/cli.js"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/cli.ts",
+    "dev": "ts-node src/cli.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "nodejs",
+    "environment",
+    "diagnostic",
+    "repair",
+    "cli",
+    "doctor",
+    "npm",
+    "yarn",
+    "pnpm"
+  ],
+  "author": "SKRahil <rahilsk203@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/env-doctor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/env-doctor/issues"
+  },
+  "homepage": "https://github.com/your-username/env-doctor#readme",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.2",
+    "fs-extra": "^11.3.2",
+    "inquirer": "^12.10.0"
+  },
+  "devDependencies": {
+    "@types/commander": "^2.12.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/inquirer": "^9.0.9",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.9.2",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
