@@ -1,6 +1,6 @@
 {
   "name": "@rahilsk/env-doctor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments",
   "main": "dist/cli.js",
   "bin": {
