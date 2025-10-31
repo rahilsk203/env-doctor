@@ -11,7 +11,7 @@ import { ErrorHandler } from './utils/errorHandler';
 const program = new Command();
 
 program
-  .name('env-doctor')
+  .name('@rahilsk/env-doctor')
   .description('Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments')
   .version('1.0.0');
 
@@ -161,7 +161,7 @@ program
   .description('Easter egg: "How can I help you today?"')
   .action(() => {
     console.log(colorize.magenta('Hello! I\'m env-doctor. How can I help you today?'));
-    console.log(colorize.cyan('Try running: env-doctor scan'));
+    console.log(colorize.cyan('Try running: npx @rahilsk/env-doctor scan'));
   });
 
 program.parse();
