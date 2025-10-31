@@ -8,20 +8,24 @@ export class Scanner {
   static async scan(cwd: string = process.cwd()): Promise<ScanResult> {
     const startTime = Date.now();
     
-    // Scan system environment
-    const environment = await SystemScanner.scan();
+    // Run independent scans in parallel for better performance
+    const [environment, nodeIssues, depIssues, nativeIssues] = await Promise.all([
+      SystemScanner.scan(),
+      NodeScanner.scan(cwd),
+      DependenciesScanner.scan(cwd),
+      NativeModulesScanner.scan(cwd)
+    ]);
     
-    // Scan Node.js related issues
-    const nodeIssues = await NodeScanner.scan(cwd);
+    // Combine all issues with optimized deduplication using Map
+    const issueMap = new Map<string, Issue>();
     
-    // Scan dependencies issues
-    const depIssues = await DependenciesScanner.scan(cwd);
+    // Add all issues to map, later issues with same ID will overwrite earlier ones
+    for (const issue of [...nodeIssues, ...depIssues, ...nativeIssues]) {
+      issueMap.set(issue.id, issue);
+    }
     
-    // Scan native modules issues
-    const nativeIssues = await NativeModulesScanner.scan(cwd);
-    
-    // Combine all issues
-    const issues = [...nodeIssues, ...depIssues, ...nativeIssues];
+    // Convert map values back to array
+    const issues = Array.from(issueMap.values());
     
     // Generate suggestions based on issues
     const suggestions = this.generateSuggestions(issues, environment);
@@ -42,12 +46,15 @@ export class Scanner {
   private static generateSuggestions(issues: Issue[], environment: EnvironmentInfo): any[] {
     const suggestions: any[] = [];
     
-    // Group issues by severity
-    const criticalIssues = issues.filter(issue => issue.severity === 'critical');
-    const highIssues = issues.filter(issue => issue.severity === 'high');
-    const mediumIssues = issues.filter(issue => issue.severity === 'medium');
+    // Optimize issue grouping using a single pass with Map for O(n) instead of O(3n)
+    const severityMap = new Map<string, number>();
+    for (const issue of issues) {
+      const count = severityMap.get(issue.severity) || 0;
+      severityMap.set(issue.severity, count + 1);
+    }
     
-    if (criticalIssues.length > 0) {
+    // Use Map lookups for O(1) severity checking
+    if ((severityMap.get('critical') || 0) > 0) {
       suggestions.push({
         id: 'critical-fix-required',
         title: 'Critical Issues Detected',
@@ -56,7 +63,7 @@ export class Scanner {
       });
     }
     
-    if (highIssues.length > 0) {
+    if ((severityMap.get('high') || 0) > 0) {
       suggestions.push({
         id: 'high-priority-fixes',
         title: 'High Priority Fixes Available',

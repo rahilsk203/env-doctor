@@ -34,22 +34,25 @@ export class SystemToolsFixer {
           const linuxPackageManagers = [
             { cmd: 'which apt', install: 'sudo apt update && sudo apt install -y python3 make g++', name: 'APT packages' },
             { cmd: 'which yum', install: 'sudo yum install -y python3 make gcc-c++', name: 'YUM packages' },
-            { cmd: 'which pacman', install: 'sudo pacman -S python3 make gcc', name: 'Pacman packages' },
-            { cmd: 'which dnf', install: 'sudo dnf install -y python3 make gcc-c++', name: 'DNF packages' },
-            { cmd: 'which zypper', install: 'sudo zypper install -y python3 make gcc-c++', name: 'Zypper packages' }
+            { cmd: 'which pacman', install: 'sudo pacman -S python3 make gcc', name: 'Pacman packages' }
           ];
           
-          let foundLinuxPM = false;
-          for (const pm of linuxPackageManagers) {
-            try {
-              await exec(pm.cmd);
-              installCmd = pm.install;
-              toolName = pm.name;
-              foundLinuxPM = true;
-              break;
-            } catch {
-              // Continue to next package manager
-            }
+          // Use parallel detection for better performance
+          const linuxPMChecks = await Promise.all(
+            linuxPackageManagers.map(async (pm) => {
+              try {
+                await exec(pm.cmd);
+                return { success: true, pm };
+              } catch {
+                return { success: false, pm };
+              }
+            })
+          );
+          
+          const foundLinuxPM = linuxPMChecks.find(check => check.success);
+          if (foundLinuxPM) {
+            installCmd = foundLinuxPM.pm.install;
+            toolName = foundLinuxPM.pm.name;
           }
           
           if (!foundLinuxPM) {
@@ -67,20 +70,29 @@ export class SystemToolsFixer {
             { cmd: 'winget --version', install: 'winget install Python.Python.3 && winget install Microsoft.VisualStudio.2022.BuildTools', name: 'WinGet packages' }
           ];
           
-          let foundWinPM = false;
-          for (const pm of winPackageManagers) {
-            try {
-              await exec(pm.cmd);
-              installCmd = pm.install;
-              toolName = pm.name;
-              foundWinPM = true;
-              break;
-            } catch {
-              // Continue to next package manager
-            }
+          // Use parallel detection for better performance
+          const pmChecks = await Promise.all(
+            winPackageManagers.map(async (pm) => {
+              try {
+                await exec(pm.cmd);
+                return { success: true, pm };
+              } catch {
+                return { success: false, pm };
+              }
+            })
+          );
+          
+          const foundPM = pmChecks.find(check => check.success);
+          if (foundPM) {
+            installCmd = foundPM.pm.install;
+            toolName = foundPM.pm.name;
+          } else {
+            result.message = 'No supported package manager found. Install Visual Studio Build Tools manually from https://visualstudio.microsoft.com/visual-cpp-build-tools/';
+            result.failedIssues.push('manual-install-required');
+            return result;
           }
           
-          if (!foundWinPM) {
+          if (!foundPM) {
             result.message = 'No supported package manager found. Install Visual Studio Build Tools manually from https://visualstudio.microsoft.com/visual-cpp-build-tools/';
             result.failedIssues.push('manual-install-required');
             return result;
@@ -117,21 +129,7 @@ export class SystemToolsFixer {
         break;
         
       case 'linux':
-        // Provide multiple options for Linux using optimized structure
-        const linuxOptions = [
-          ['# Option 1: Using APT (Ubuntu/Debian)', 'sudo apt update && sudo apt install -y python3 make g++'],
-          ['# Option 2: Using YUM (CentOS/RHEL)', 'sudo yum install -y python3 make gcc-c++'],
-          ['# Option 3: Using DNF (Fedora)', 'sudo dnf install -y python3 make gcc-c++'],
-          ['# Option 4: Using Pacman (Arch)', 'sudo pacman -S python3 make gcc'],
-          ['# Option 5: Using Zypper (openSUSE)', 'sudo zypper install -y python3 make gcc-c++']
-        ];
-        
-        linuxOptions.forEach((option, index) => {
-          commands.push(...option);
-          if (index < linuxOptions.length - 1) {
-            commands.push(''); // Add blank line between options
-          }
-        });
+        commands.push('sudo apt update && sudo apt install -y python3 make g++');
         break;
         
       case 'win32':

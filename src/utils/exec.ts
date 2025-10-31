@@ -1,10 +1,11 @@
 import { exec as childExec } from 'child_process';
 import { promisify } from 'util';
+import { LRUCache } from './lruCache';
 
 const execPromise = promisify(childExec);
 
-// Optimized cache for frequently executed commands
-const commandCache = new Map<string, { result: ExecResult; timestamp: number }>();
+// Enhanced LRU cache for frequently executed commands with 50-item capacity
+const commandCache = new LRUCache<string, { result: ExecResult; timestamp: number }>(50);
 const CACHE_TTL = 5000; // 5 seconds cache TTL
 
 export interface ExecResult {
@@ -14,7 +15,7 @@ export interface ExecResult {
 }
 
 export async function exec(command: string, options: { cwd?: string; timeout?: number } = {}): Promise<ExecResult> {
-  // Check cache for frequently used commands
+  // Check LRU cache for frequently used commands
   const cacheKey = `${command}-${options.cwd || ''}`;
   const cached = commandCache.get(cacheKey);
   
@@ -31,11 +32,8 @@ export async function exec(command: string, options: { cwd?: string; timeout?: n
     
     const result = { stdout, stderr, code: 0 };
     
-    // Cache successful results
+    // Cache successful results with LRU eviction
     commandCache.set(cacheKey, { result, timestamp: Date.now() });
-    
-    // Clean up old cache entries
-    cleanupCache();
     
     return result;
   } catch (error: any) {
@@ -45,22 +43,11 @@ export async function exec(command: string, options: { cwd?: string; timeout?: n
       code: error.code || 1
     };
     
-    // Cache error results as well to avoid repeated failed calls
+    // Cache error results as well to avoid repeated failed calls with LRU eviction
     commandCache.set(cacheKey, { result, timestamp: Date.now() });
-    
-    // Clean up old cache entries
-    cleanupCache();
     
     return result;
   }
 }
 
-// Optimized cache cleanup function
-function cleanupCache() {
-  const now = Date.now();
-  for (const [key, value] of commandCache.entries()) {
-    if (now - value.timestamp > CACHE_TTL) {
-      commandCache.delete(key);
-    }
-  }
-}
+// LRU cache automatically handles eviction, no manual cleanup needed

@@ -1,5 +1,5 @@
 import path from 'path';
-import fs from 'fs-extra';
+import { FileUtils } from '../utils/fs';
 import { FixResult } from '../types';
 import { exec } from '../utils/exec';
 import { Logger } from '../utils/logger';
@@ -19,7 +19,7 @@ export class CleanupFixer {
       
       // Use Promise.all for parallel operations when possible
       const pathsToCheck = [nodeModulesPath, packageLockPath];
-      const existenceChecks = await Promise.all(pathsToCheck.map(p => fs.pathExists(p)));
+      const existenceChecks = await Promise.all(pathsToCheck.map(p => FileUtils.fileExists(p)));
       
       const [nodeModulesExists, packageLockExists] = existenceChecks;
       
@@ -28,13 +28,13 @@ export class CleanupFixer {
       
       if (nodeModulesExists) {
         Logger.log('Removing node_modules directory...', 'info');
-        removalPromises.push(fs.remove(nodeModulesPath));
+        removalPromises.push(FileUtils.removeDir(nodeModulesPath));
         result.fixedIssues.push('node_modules-removed');
       }
       
       if (packageLockExists) {
         Logger.log('Removing package-lock.json...', 'info');
-        removalPromises.push(fs.remove(packageLockPath));
+        removalPromises.push(FileUtils.removeDir(packageLockPath));
         result.fixedIssues.push('package-lock-removed');
       }
       
@@ -77,7 +77,7 @@ export class CleanupFixer {
       const existenceChecks = await Promise.all(
         lockFiles.map(async (lockFile) => ({
           ...lockFile,
-          exists: await fs.pathExists(path.join(cwd, lockFile.file))
+          exists: await FileUtils.fileExists(path.join(cwd, lockFile.file))
         }))
       );
       
@@ -104,69 +104,6 @@ export class CleanupFixer {
     } catch (error) {
       result.failedIssues.push('install-error');
       result.message = `Installation error: ${error}`;
-    }
-    
-    return result;
-  }
-  
-  // Enhanced method to clean node-gyp cache
-  static async cleanNodeGypCache(cwd: string = process.cwd()): Promise<FixResult> {
-    const result: FixResult = {
-      success: false,
-      message: '',
-      fixedIssues: [],
-      failedIssues: []
-    };
-    
-    try {
-      const nodeGypCachePath = path.join(cwd, 'node_modules', '.cache', 'node-gyp');
-      const nodeGypPath = path.join(cwd, 'node_modules', '.bin', 'node-gyp');
-      const nodeVersionFile = path.join(cwd, 'node_modules', '.cache', 'node-gyp', '.node-version');
-      
-      // Check if node-gyp cache exists
-      const cacheExists = await fs.pathExists(nodeGypCachePath);
-      const binaryExists = await fs.pathExists(nodeGypPath);
-      
-      let cleanedSomething = false;
-      
-      // Remove node-gyp cache if it exists
-      if (cacheExists) {
-        Logger.log('Removing node-gyp cache...', 'info');
-        await fs.remove(nodeGypCachePath);
-        result.fixedIssues.push('node-gyp-cache-removed');
-        cleanedSomething = true;
-      }
-      
-      // Update the node version file
-      if (cacheExists) {
-        await fs.ensureDir(nodeGypCachePath);
-        await fs.writeFile(nodeVersionFile, process.version);
-        result.fixedIssues.push('node-version-recorded');
-        cleanedSomething = true;
-      }
-      
-      // Also try to clean using node-gyp command if available
-      if (binaryExists) {
-        try {
-          Logger.log('Cleaning node-gyp cache via command...', 'info');
-          await exec('node-gyp clean', { cwd });
-          result.fixedIssues.push('node-gyp-cleaned');
-          cleanedSomething = true;
-        } catch (error) {
-          Logger.log(`Failed to clean node-gyp via command: ${error}`, 'warn');
-        }
-      }
-      
-      if (cleanedSomething) {
-        result.success = true;
-        result.message = 'Successfully cleaned node-gyp cache';
-      } else {
-        result.success = true;
-        result.message = 'No node-gyp cache found to clean';
-      }
-    } catch (error) {
-      result.failedIssues.push('node-gyp-cache-cleanup-failed');
-      result.message = `Failed to clean node-gyp cache: ${error}`;
     }
     
     return result;

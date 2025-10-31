@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import { colorize } from './colors';
 
 export class Logger {
   static verboseMode = false;
@@ -7,16 +7,16 @@ export class Logger {
     const timestamp = new Date().toISOString();
     switch (type) {
       case 'info':
-        console.log(`${chalk.gray(timestamp)} ${chalk.blue('INFO')} ${message}`);
+        console.log(`${colorize.gray(timestamp)} ${colorize.blue('INFO')} ${message}`);
         break;
       case 'warn':
-        console.log(`${chalk.gray(timestamp)} ${chalk.yellow('WARN')} ${message}`);
+        console.log(`${colorize.gray(timestamp)} ${colorize.yellow('WARN')} ${message}`);
         break;
       case 'error':
-        console.log(`${chalk.gray(timestamp)} ${chalk.red('ERROR')} ${message}`);
+        console.log(`${colorize.gray(timestamp)} ${colorize.red('ERROR')} ${message}`);
         break;
       case 'success':
-        console.log(`${chalk.gray(timestamp)} ${chalk.green('SUCCESS')} ${message}`);
+        console.log(`${colorize.gray(timestamp)} ${colorize.green('SUCCESS')} ${message}`);
         break;
     }
   }
@@ -24,11 +24,11 @@ export class Logger {
   static verbose(message: string) {
     if (this.verboseMode) {
       const timestamp = new Date().toISOString();
-      console.log(`${chalk.gray(timestamp)} ${chalk.cyan('VERBOSE')} ${message}`);
+      console.log(`${colorize.gray(timestamp)} ${colorize.cyan('VERBOSE')} ${message}`);
     }
   }
   
   static divider() {
-    console.log(chalk.gray('-'.repeat(80)));
+    console.log(colorize.gray('-'.repeat(80)));
   }
 }

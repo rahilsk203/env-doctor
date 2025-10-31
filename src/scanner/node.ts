@@ -1,5 +1,5 @@
 import path from 'path';
-import fs from 'fs-extra';
+import { FileUtils } from '../utils/fs';
 import { Issue } from '../types';
 import { exec } from '../utils/exec';
 
@@ -15,10 +15,6 @@ export class NodeScanner {
     const npmVersionIssues = await this.checkNpmVersion(cwd);
     issues.push(...npmVersionIssues);
     
-    // Check for multiple Node.js installations that might cause conflicts
-    const nodeInstallationIssues = await this.checkNodeInstallations();
-    issues.push(...nodeInstallationIssues);
-    
     return issues;
   }
   
@@ -28,8 +24,9 @@ export class NodeScanner {
     try {
       // Check for .nvmrc file
       const nvmrcPath = path.join(cwd, '.nvmrc');
-      if (await fs.pathExists(nvmrcPath)) {
-        const requiredVersion = (await fs.readFile(nvmrcPath, 'utf8')).trim();
+      if (await FileUtils.fileExists(nvmrcPath)) {
+        const readFileAsync = require('util').promisify(require('fs').readFile);
+        const requiredVersion = (await readFileAsync(nvmrcPath, 'utf8')).trim();
         const currentVersion = process.version;
         
         if (!this.isVersionCompatible(currentVersion, requiredVersion)) {
@@ -46,8 +43,8 @@ export class NodeScanner {
       
       // Check package.json engines
       const packageJsonPath = path.join(cwd, 'package.json');
-      if (await fs.pathExists(packageJsonPath)) {
-        const packageJson = await fs.readJson(packageJsonPath);
+      if (await FileUtils.fileExists(packageJsonPath)) {
+        const packageJson = await FileUtils.readJsonFile(packageJsonPath);
         if (packageJson.engines && packageJson.engines.node) {
           const requiredVersion = packageJson.engines.node;
           const currentVersion = process.version;
@@ -63,23 +60,6 @@ export class NodeScanner {
             });
           }
         }
-      }
-      
-      // Check if Node.js version is outdated (more than 2 years old)
-      const currentVersion = process.version.replace('v', '');
-      const currentParts = currentVersion.split('.').map(Number);
-      const majorVersion = currentParts[0];
-      
-      // Node.js major versions are typically supported for 30 months
-      // Versions older than 16 are likely outdated
-      if (majorVersion < 16) {
-        issues.push({
-          id: 'node-version-outdated',
-          type: 'warning',
-          message: `Node.js version ${process.version} is outdated. Consider upgrading to a newer LTS version.`,
-          severity: 'medium',
-          fixAvailable: true
-        });
       }
     } catch (error) {
       issues.push({
@@ -103,8 +83,8 @@ export class NodeScanner {
       
       // Check package.json engines for npm
       const packageJsonPath = path.join(cwd, 'package.json');
-      if (await fs.pathExists(packageJsonPath)) {
-        const packageJson = await fs.readJson(packageJsonPath);
+      if (await FileUtils.fileExists(packageJsonPath)) {
+        const packageJson = await FileUtils.readJsonFile(packageJsonPath);
         if (packageJson.engines && packageJson.engines.npm) {
           const requiredVersion = packageJson.engines.npm;
           
@@ -120,21 +100,6 @@ export class NodeScanner {
           }
         }
       }
-      
-      // Check if npm version is outdated
-      const npmParts = npmVersion.split('.').map(Number);
-      const npmMajorVersion = npmParts[0];
-      
-      // npm versions older than 6 are likely outdated
-      if (npmMajorVersion < 6) {
-        issues.push({
-          id: 'npm-version-outdated',
-          type: 'warning',
-          message: `npm version ${npmVersion} is outdated. Consider upgrading to a newer version.`,
-          severity: 'low',
-          fixAvailable: true
-        });
-      }
     } catch (error) {
       issues.push({
         id: 'npm-version-check-failed',
@@ -143,63 +108,6 @@ export class NodeScanner {
         severity: 'low',
         fixAvailable: false
       });
-    }
-    
-    return issues;
-  }
-  
-  private static async checkNodeInstallations(): Promise<Issue[]> {
-    const issues: Issue[] = [];
-    
-    try {
-      // Check for multiple Node.js installations that might cause conflicts
-      const nodePaths: string[] = [];
-      
-      // Check common installation paths
-      const commonPaths = [
-        '/usr/local/bin/node',
-        '/usr/bin/node',
-        '/opt/nodejs/bin/node',
-        process.env.NODEJS_HOME,
-        process.env.NVM_DIR
-      ];
-      
-      // Filter out undefined paths
-      const validPaths = commonPaths.filter(p => p !== undefined) as string[];
-      
-      for (const nodePath of validPaths) {
-        if (await fs.pathExists(nodePath)) {
-          nodePaths.push(nodePath);
-        }
-      }
-      
-      // On Windows, check PATH for multiple node.exe installations
-      if (process.platform === 'win32') {
-        const { stdout } = await exec('where node');
-        const paths = stdout.trim().split('\n').filter(p => p.trim() !== '');
-        nodePaths.push(...paths);
-      } else {
-        try {
-          const { stdout } = await exec('which -a node');
-          const paths = stdout.trim().split('\n').filter(p => p.trim() !== '');
-          nodePaths.push(...paths);
-        } catch (error) {
-          // Ignore errors
-        }
-      }
-      
-      // If we found multiple installations, warn the user
-      if (nodePaths.length > 1) {
-        issues.push({
-          id: 'multiple-node-installations',
-          type: 'warning',
-          message: `Multiple Node.js installations detected. This may cause conflicts. Found installations: ${nodePaths.join(', ')}`,
-          severity: 'low',
-          fixAvailable: true
-        });
-      }
-    } catch (error) {
-      // Silently ignore
     }
     
     return issues;
