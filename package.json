@@ -1,5 +1,5 @@
 {
-  "name": "env-doctor",
+  "name": "@rahilsk/env-doctor",
   "version": "1.0.0",
   "description": "Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments",
   "main": "dist/cli.js",
