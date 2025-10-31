@@ -108,4 +108,67 @@ export class CleanupFixer {
     
     return result;
   }
+  
+  // Enhanced method to clean node-gyp cache
+  static async cleanNodeGypCache(cwd: string = process.cwd()): Promise<FixResult> {
+    const result: FixResult = {
+      success: false,
+      message: '',
+      fixedIssues: [],
+      failedIssues: []
+    };
+    
+    try {
+      const nodeGypCachePath = path.join(cwd, 'node_modules', '.cache', 'node-gyp');
+      const nodeGypPath = path.join(cwd, 'node_modules', '.bin', 'node-gyp');
+      const nodeVersionFile = path.join(cwd, 'node_modules', '.cache', 'node-gyp', '.node-version');
+      
+      // Check if node-gyp cache exists
+      const cacheExists = await fs.pathExists(nodeGypCachePath);
+      const binaryExists = await fs.pathExists(nodeGypPath);
+      
+      let cleanedSomething = false;
+      
+      // Remove node-gyp cache if it exists
+      if (cacheExists) {
+        Logger.log('Removing node-gyp cache...', 'info');
+        await fs.remove(nodeGypCachePath);
+        result.fixedIssues.push('node-gyp-cache-removed');
+        cleanedSomething = true;
+      }
+      
+      // Update the node version file
+      if (cacheExists) {
+        await fs.ensureDir(nodeGypCachePath);
+        await fs.writeFile(nodeVersionFile, process.version);
+        result.fixedIssues.push('node-version-recorded');
+        cleanedSomething = true;
+      }
+      
+      // Also try to clean using node-gyp command if available
+      if (binaryExists) {
+        try {
+          Logger.log('Cleaning node-gyp cache via command...', 'info');
+          await exec('node-gyp clean', { cwd });
+          result.fixedIssues.push('node-gyp-cleaned');
+          cleanedSomething = true;
+        } catch (error) {
+          Logger.log(`Failed to clean node-gyp via command: ${error}`, 'warn');
+        }
+      }
+      
+      if (cleanedSomething) {
+        result.success = true;
+        result.message = 'Successfully cleaned node-gyp cache';
+      } else {
+        result.success = true;
+        result.message = 'No node-gyp cache found to clean';
+      }
+    } catch (error) {
+      result.failedIssues.push('node-gyp-cache-cleanup-failed');
+      result.message = `Failed to clean node-gyp cache: ${error}`;
+    }
+    
+    return result;
+  }
 }
