@@ -1,23 +1,18 @@
-export class WindowsPlatform {
-  static isWindows(): boolean {
+import { PlatformModule } from '../types';
+
+const windowsPlatform: PlatformModule = {
+  async detect(): Promise<boolean> {
     return process.platform === 'win32';
+  },
+
+  getInstallCommand(packageName: string): string {
+    // Prefer Chocolatey, fallback to Scoop, then WinGet
+    return `choco install ${packageName} -y || scoop install ${packageName} || winget install ${packageName}`;
+  },
+
+  getBuildTools(): string[] {
+    return ['python', 'make', 'g++', 'clang', 'cmake', 'visualstudio', 'windowssdk'];
   }
-  
-  static isWSL(): boolean {
-    return process.env.WSL_DISTRO_NAME !== undefined;
-  }
-  
-  static hasVisualStudio(): boolean {
-    return !!process.env.VSINSTALLDIR || !!process.env.VisualStudioVersion;
-  }
-  
-  static hasWindowsSDK(): boolean {
-    return !!process.env.WindowsSdkDir;
-  }
-  
-  static async exec(command: string): Promise<{ stdout: string; stderr: string }> {
-    const { execSync } = require('child_process');
-    const result = execSync(command, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
-    return { stdout: result, stderr: '' };
-  }
-}
+};
+
+export default windowsPlatform;

@@ -1,140 +1,153 @@
-# 🏥 env-doctor
+# env-doctor
 
-[![npm version](https://badge.fury.io/js/@rahilsk%2Fenv-doctor.svg)](https://badge.fury.io/js/@rahilsk%2Fenv-doctor)
+Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments.
+
+[![npm version](https://badge.fury.io/js/env-doctor.svg)](https://badge.fury.io/js/env-doctor)
+[![Build Status](https://github.com/rahilsk203/env-doctor/workflows/CI/badge.svg)](https://github.com/rahilsk203/env-doctor/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments.**
+## Overview
 
----
+`env-doctor` is a cross-platform CLI tool designed to simplify the setup and troubleshooting of JavaScript/TypeScript development environments. It addresses the common pain points developers face when dealing with inconsistent Node.js versions, missing build tools, incompatible dependencies, and platform-specific issues.
 
-## 🌟 Overview
+## Features
 
-`env-doctor` is a cross-platform CLI tool that automatically detects, diagnoses, and fixes common environment issues in Node.js projects. Think of it as a "doctor" for your development environment - it scans for problems, provides clear diagnostics, and offers intelligent fixes.
+- **Environment Scanner**: Automatically detect and validate Node.js version, package managers, OS details, build essentials, and more
+- **Auto-Fixer Engine**: Safe, reversible, opt-in fixes for common environment issues
+- **Platform Intelligence**: Auto-detect Termux, WSL, Docker, CI environments and apply platform-specific logic
+- **Smart Reporting**: Persist results with fix success history and confidence scores
+- **Cross-Platform Support**: Works on Linux, macOS, Windows, and Termux (Android)
 
-### 🎯 Key Benefits
-- **Cross-Platform**: Works on Linux, macOS, Windows, and Termux
-- **Zero Configuration**: Works out of the box with no setup required
-- **Safe Fixes**: Never modifies your code without explicit consent
-- **Fast Performance**: Optimized with DSA-level algorithms for efficiency
+## Supported Environments
 
----
+| Platform | Variants Tested |
+|----------|----------------|
+| Linux | Ubuntu, Debian, Arch, Alpine, WSL2 |
+| macOS | Intel & Apple Silicon (M1/M2/M3) |
+| Windows | 10/11 (PowerShell, CMD, Git Bash) |
+| Termux | Android (arm64, aarch64) |
 
-## 🚀 Quick Start
-
-### Using npx (Recommended)
-```bash
-npx @rahilsk/env-doctor
-```
-
-### Global Installation
-```bash
-npm install -g @rahilsk/env-doctor
-```
-
----
-
-## 📋 Commands
-
-| Command | Description |
-|---------|-------------|
-| `env-doctor scan` | Run full diagnostic, show color-coded report |
-| `env-doctor fix` | Auto-apply safe fixes (prompt for risky ones) |
-| `env-doctor fix --all` | Non-interactive mode (for CI) |
-| `env-doctor report` | View last scan (from `.envdoctor/report.json`) |
-| `env-doctor reset` | Clear cache, logs, and reports |
-| `env-doctor doctor` | Easter egg: "How can I help you today?" |
-
----
-
-## 🔍 What It Detects
-
-- Node.js version mismatches
-- Missing build tools (`python3`, `make`, `g++`)
-- Corrupted or missing `node_modules`
-- Native module build cache issues
-- Platform-specific dependency problems
-- Package manager compatibility issues
-
----
-
-## 🛠️ What It Fixes
-
-- Cleans up and reinstalls `node_modules`
-- Rebuilds native addons
-- Skips incompatible optional dependencies
-- Guides installation of missing system packages
-- Resolves WSL interoperability issues
-
----
-
-## 💻 Supported Platforms
-
-- **Linux**: Ubuntu, Debian, Arch, Alpine, WSL2
-- **macOS**: Intel & Apple Silicon (M1/M2/M3)
-- **Windows**: 10/11 (PowerShell, CMD, Git Bash)
-- **Termux**: Android (arm64, aarch64)
-
----
-
-## 🎯 Example Usage
+## Installation
 
 ```bash
-# Scan your environment for issues
-npx @rahilsk/env-doctor scan
+# Install globally
+npm install -g env-doctor
 
-# Fix all detected issues
-npx @rahilsk/env-doctor fix
-
-# View the last scan report
-npx @rahilsk/env-doctor report
+# Or run directly with npx
+npx env-doctor scan
 ```
 
-### Sample Output
+## Usage
+
+```bash
+# Run full diagnostic scan
+env-doctor scan
+
+# Auto-apply safe fixes (prompt for risky ones)
+env-doctor fix
+
+# Non-interactive mode (for CI)
+env-doctor fix --all
+
+# View last scan report
+env-doctor report
+
+# Clear cache, logs, and reports
+env-doctor reset
+
+# Easter egg
+env-doctor doctor
 ```
-$ npx @rahilsk/env-doctor scan
-Running environment scan...
-Scan completed with 3 issues found
 
-Issues found:
-  • Node.js version mismatch. Current: v16.14.0, Required: >=18.0.0 (fix available)
-  • Missing python3. Required for compiling native modules. (fix available)
-  • fsevents is installed but only works on macOS. This may cause issues on other platforms. (fix available)
+## Core Functionality
+
+### Environment Scanner
+- Node.js version validation (via .nvmrc, engines, package.json, or runtime)
+- npm/yarn/pnpm version and compatibility checks
+- OS, architecture, shell, and container/VM context detection
+- Build essentials verification (python3, make, g++, clang, cmake)
+- node_modules integrity checks (checksum mismatch, lockfile drift)
+- Native module build cache issue detection
+
+### Auto-Fixer Engine
+- node_modules cleanup + npm ci / npm install --force
+- Rebuild native addons (npm rebuild or node-gyp rebuild)
+- Skip optional dependencies on incompatible platforms
+- Install missing system packages with guided prompts
+- Repair node-gyp Python/path issues
+- Fix WSL interoperability issues
+
+## Development
+
+### Prerequisites
+- Node.js >= 14
+- npm, yarn, or pnpm
+
+### Setup
+```bash
+# Clone the repository
+git clone https://github.com/rahilsk203/env-doctor.git
+cd env-doctor
+
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Run in development mode
+npm run dev
+
+# Run tests
+npm test
+
+# Watch mode for tests
+npm run test:watch
+
+# Generate coverage
+npm run test:coverage
 ```
 
----
+### Project Structure
+```
+src/
+├── cli.ts              # Entry point
+├── types.ts            # Type definitions
+├── scanner/            # Environment scanning modules
+│   ├── index.ts        # Scanner orchestrator
+│   ├── node.ts         # Node.js version checks
+│   ├── system.ts       # OS and system tools checks
+│   ├── dependencies.ts # Dependency validation
+│   └── native.ts       # Native module checks
+├── fixer/              # Auto-fixing modules
+│   ├── index.ts        # Fixer orchestrator
+│   └── ...             # Specific fix implementations
+├── platforms/          # Platform-specific logic
+│   ├── index.ts        # Platform module factory
+│   ├── linux.ts        # Linux-specific logic
+│   ├── macos.ts        # macOS-specific logic
+│   ├── windows.ts      # Windows-specific logic
+│   └── termux.ts       # Termux-specific logic
+└── utils/              # Utility functions
+    ├── exec.ts         # Command execution
+    ├── logger.ts       # Logging utilities
+    ├── report.ts       # Report generation
+    └── cache.ts        # Cache management
+```
 
-## ⚡ Performance Optimizations
+## Contributing
 
-env-doctor includes several DSA-level optimizations for improved performance:
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-1. **O(1) Lookups**: Using Map data structures for instant issue-to-fix mapping
-2. **Parallel Processing**: Concurrent operations for faster execution
-3. **Intelligent Caching**: Avoids repeated command executions
-4. **Efficient Memory Management**: Optimized data structures and algorithms
-
----
-
-## 🛡️ Safety Features
-
-- Never modifies `package.json` without explicit consent
-- Interactive prompts for risky operations
-- Rollback capability for `node_modules` deletion
-- Dry-run mode available for testing
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please read our [contributing guidelines](CONTRIBUTING.md) for details.
-
----
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+## Author
 
-## 🎯 Success Criteria
+Rahil S K - [@rahilsk203](https://github.com/rahilsk203)
 
-A junior developer can run `npx @rahilsk/env-doctor fix` in a broken Node.js repo on any OS and get a working npm install within 60 seconds, with a clear explanation of what was fixed.
+## Acknowledgments
+
+- Thanks to all contributors who have helped shape this tool
+- Inspired by the need to simplify JavaScript/TypeScript development environment setup

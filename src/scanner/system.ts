@@ -1,62 +1,92 @@
-import os from 'os';
-import { EnvironmentInfo } from '../types';
-import { exec } from '../utils/exec';
+import { SystemInfo, BuildToolsInfo, Issue } from '../types';
+import { execCommand } from '../utils/exec';
 
-export class SystemScanner {
-  static async scan(): Promise<EnvironmentInfo> {
-    const envInfo: EnvironmentInfo = {
-      nodeVersion: process.version,
-      npmVersion: await this.getNpmVersion(),
-      os: this.getOS(),
-      arch: os.arch(),
-      shell: this.getShell(),
-      isWSL: this.isWSL(),
-      isDocker: this.isDocker(),
-      isCI: this.isCI()
-    };
-    
-    return envInfo;
-  }
-  
-  private static async getNpmVersion(): Promise<string> {
+export async function scanSystem(): Promise<SystemInfo & { issues?: Issue[] }> {
+  const info: SystemInfo & { issues?: Issue[] } = {
+    platform: process.platform,
+    arch: process.arch,
+    shell: process.env.SHELL || process.env.ComSpec || 'unknown',
+    isWSL: isWSL(),
+    isDocker: isDocker(),
+    isCI: !!process.env.CI,
+    buildTools: await checkBuildTools(),
+    issues: []
+  };
+
+  return info;
+}
+
+function isWSL(): boolean {
+  return process.platform === 'linux' && 
+         (process.env.WSL_DISTRO_NAME !== undefined || 
+          process.env.WSL_INTEROP !== undefined);
+}
+
+function isDocker(): boolean {
+  // Simple check for Docker environment
+  return process.env.DOCKER !== undefined || 
+         process.env.CONTAINER !== undefined;
+}
+
+async function checkBuildTools(): Promise<BuildToolsInfo> {
+  const tools: BuildToolsInfo = {
+    python: false,
+    make: false,
+    gpp: false,
+    clang: false,
+    cmake: false
+  };
+
+  // Check for python
+  try {
+    await execCommand('python --version');
+    tools.python = true;
+  } catch {
     try {
-      const { stdout } = await exec('npm --version');
-      return stdout.trim();
+      await execCommand('python3 --version');
+      tools.python = true;
     } catch {
-      return 'unknown';
+      // Python not found
     }
   }
-  
-  private static getOS(): string {
-    const platform = os.platform();
-    switch (platform) {
-      case 'darwin': return 'macOS';
-      case 'win32': return 'Windows';
-      case 'linux': return 'Linux';
-      default: return platform;
-    }
+
+  // Check for make
+  try {
+    await execCommand('make --version');
+    tools.make = true;
+  } catch {
+    // make not found
   }
-  
-  private static getShell(): string {
-    return process.env.SHELL || process.env.ComSpec || 'unknown';
+
+  // Check for g++
+  try {
+    await execCommand('g++ --version');
+    tools.gpp = true;
+  } catch {
+    // g++ not found
   }
-  
-  private static isWSL(): boolean {
-    return os.release().toLowerCase().includes('microsoft');
+
+  // Check for clang
+  try {
+    await execCommand('clang --version');
+    tools.clang = true;
+  } catch {
+    // clang not found
   }
-  
-  private static isDocker(): boolean {
-    // Check for docker environment
-    return process.env.DOCKER === 'true' || 
-           (process.env.CONTAINER === 'true') ||
-           false;
+
+  // Check for cmake
+  try {
+    await execCommand('cmake --version');
+    tools.cmake = true;
+  } catch {
+    // cmake not found
   }
-  
-  private static isCI(): boolean {
-    return !!process.env.CI || 
-           !!process.env.GITHUB_ACTIONS || 
-           !!process.env.TRAVIS || 
-           !!process.env.JENKINS ||
-           false;
+
+  // Platform-specific checks
+  if (process.platform === 'win32') {
+    // Check for Visual Studio and Windows SDK
+    // This would require more complex checks
   }
+
+  return tools;
 }

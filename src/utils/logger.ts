@@ -1,34 +1,25 @@
-import { colorize } from './colors';
+import chalk from 'chalk';
 
 export class Logger {
-  static verboseMode = false;
-  
-  static log(message: string, type: 'info' | 'warn' | 'error' | 'success' = 'info') {
-    const timestamp = new Date().toISOString();
-    switch (type) {
-      case 'info':
-        console.log(`${colorize.gray(timestamp)} ${colorize.blue('INFO')} ${message}`);
-        break;
-      case 'warn':
-        console.log(`${colorize.gray(timestamp)} ${colorize.yellow('WARN')} ${message}`);
-        break;
-      case 'error':
-        console.log(`${colorize.gray(timestamp)} ${colorize.red('ERROR')} ${message}`);
-        break;
-      case 'success':
-        console.log(`${colorize.gray(timestamp)} ${colorize.green('SUCCESS')} ${message}`);
-        break;
-    }
+  static info(message: string): void {
+    console.log(chalk.blue(`ℹ ${message}`));
   }
-  
-  static verbose(message: string) {
-    if (this.verboseMode) {
-      const timestamp = new Date().toISOString();
-      console.log(`${colorize.gray(timestamp)} ${colorize.cyan('VERBOSE')} ${message}`);
-    }
+
+  static success(message: string): void {
+    console.log(chalk.green(`✅ ${message}`));
   }
-  
-  static divider() {
-    console.log(colorize.gray('-'.repeat(80)));
+
+  static warn(message: string): void {
+    console.log(chalk.yellow(`⚠ ${message}`));
+  }
+
+  static error(message: string): void {
+    console.error(chalk.red(`❌ ${message}`));
+  }
+
+  static debug(message: string): void {
+    if (process.env.DEBUG) {
+      console.log(chalk.gray(`🐛 ${message}`));
+    }
   }
 }

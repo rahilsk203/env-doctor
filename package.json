@@ -1,52 +1,63 @@
 {
-  "name": "@rahilsk/env-doctor",
-  "version": "1.0.1",
-  "description": "Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments",
+  "name": "env-doctor",
+  "version": "1.0.0",
   "main": "dist/cli.js",
   "bin": {
     "env-doctor": "./dist/cli.js"
   },
   "files": [
-    "dist/**/*"
+    "dist/",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
-    "start": "ts-node src/cli.ts",
     "dev": "ts-node src/cli.ts",
+    "start": "node dist/cli.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "prepublishOnly": "npm run build"
+    "test:coverage": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rahilsk203/env-doctor.git"
   },
   "keywords": [
     "nodejs",
     "environment",
     "diagnostic",
-    "repair",
+    "fix",
     "cli",
     "doctor",
-    "npm",
-    "yarn",
-    "pnpm"
+    "javascript",
+    "typescript"
   ],
-  "author": "SKRahil <rahilsk203@gmail.com>",
+  "author": "Rahil S K <rahilsk203@gmail.com>",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/rahilsk203/env-doctor.git"
-  },
   "bugs": {
     "url": "https://github.com/rahilsk203/env-doctor/issues"
   },
   "homepage": "https://github.com/rahilsk203/env-doctor#readme",
+  "description": "Intelligent diagnostic and repair tool for JavaScript/TypeScript development environments",
   "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.2",
+    "fs-extra": "^11.3.2",
+    "inquirer": "^12.10.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^24.9.2",
     "jest": "^30.2.0",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ]
   }
 }
